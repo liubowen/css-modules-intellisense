@@ -2,8 +2,12 @@
   "name": "css-modules-intellisense",
   "displayName": "css modules intellisense",
   "description": "css modules 智能提示",
-  "version": "0.0.1",
-	"keywords": ["css modules", "intellisense", "completion"],
+  "version": "0.0.2",
+  "keywords": [
+    "css modules",
+    "intellisense",
+    "completion"
+  ],
   "publisher": "pakwoon",
   "engines": {
     "vscode": "^1.55.0"
@@ -17,7 +21,7 @@
     "onLanguage:typescript",
     "onLanguage:javascriptreact",
     "onLanguage:typescriptreact"
-	],
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -30,7 +34,7 @@
           "description": "路径别名"
         },
         "css-modules-intellisense.configPath": {
-          "type":"string",
+          "type": "string",
           "default": "./cmconfig.json",
           "description": "设置当前项目配置文件地址"
         }
@@ -60,11 +64,11 @@
   },
   "license": "SEE LICENSE IN LICENSE.txt",
   "repository": {
-		"type": "git",
-		"url": "https://github.com/liubowen/css-modules-intellisense"
-	},
+    "type": "git",
+    "url": "https://github.com/liubowen/css-modules-intellisense"
+  },
   "bugs": {
-		"url": "https://github.com/liubowen/css-modules-intellisense/issues"
-	},
+    "url": "https://github.com/liubowen/css-modules-intellisense/issues"
+  },
   "homepage": "https://github.com/liubowen/css-modules-intellisense/blob/master/README.md"
 }
