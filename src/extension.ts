@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import provideCompletionItems from './provideCompletionItems';
+import provideDefinition from './provideDefinition';
 
 /**
  * 功能适用文档类型
@@ -23,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
   const resolveCompletionItem = () => null;
 
   // 注册代码建议提示，只有当按下“.”时才触发
-  const disposable = vscode.languages.registerCompletionItemProvider(
+  const reminder = vscode.languages.registerCompletionItemProvider(
     documentSelector,
     {
       provideCompletionItems,
@@ -32,7 +33,11 @@ export function activate(context: vscode.ExtensionContext) {
     triggerCharacters
   );
 
-  context.subscriptions.push(disposable);
+  const definition = vscode.languages.registerDefinitionProvider(documentSelector, {
+    provideDefinition,
+  });
+
+  context.subscriptions.push(reminder, definition);
 }
 
 export function deactivate() {}
