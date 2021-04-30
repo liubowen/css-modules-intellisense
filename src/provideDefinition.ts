@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as readline from 'readline';
 import { isFileExisted, isJson } from './utils';
 
 const provideDefinition = async (document: vscode.TextDocument, position: vscode.Position) => {
@@ -26,7 +25,14 @@ const provideDefinition = async (document: vscode.TextDocument, position: vscode
 
     const { line, column } = getClassnamePosition(classname, styleFilePath);
 
-    return new vscode.Location(vscode.Uri.file(styleFilePath), new vscode.Position(line, column));
+    let rangeOrPosition: vscode.Position | vscode.Range = new vscode.Position(line, column);
+    if (config.selectedClassname) {
+      const start = new vscode.Position(line, column);
+      const end = new vscode.Position(line, column + classname.length);
+      rangeOrPosition = new vscode.Range(start, end);
+    }
+
+    return new vscode.Location(vscode.Uri.file(styleFilePath), rangeOrPosition);
   } catch (error) {
     console.log(error);
   }
@@ -73,6 +79,7 @@ async function getConfig() {
   let alias: IAlias = {};
   const conf = vscode.workspace.getConfiguration();
   const aliasSetting: IAlias | undefined = conf.get('css-modules-intellisense.alias');
+  let selectedClassname: Boolean = conf.get('css-modules-intellisense.selectedClassname') || false;
   const configPath: string = conf.get('css-modules-intellisense.configPath') || '';
   let rootPath = (vscode.workspace.workspaceFolders || [])[0]?.uri?.path;
   if (rootPath[0] === '/') {
@@ -116,12 +123,17 @@ async function getConfig() {
             ...aliasSetAbsolutePath(config.alias, configAbsolutePath),
           };
         }
+
+        if (config.hasOwnProperty('selectedClassname')) {
+          selectedClassname = config.selectedClassname;
+        }
       }
     }
   }
 
   return {
     alias,
+    selectedClassname,
   };
 }
 
@@ -158,12 +170,16 @@ function getStyleFilePath(name: string, document: vscode.TextDocument, alias: IA
 /** 根据类名获取所在less文件的坐标 */
 function getClassnamePosition(classname: string, filePath: string) {
   let line = 0;
-  const column = 0;
+  let column = 0;
   const fileContext = fs.readFileSync(filePath, { encoding: 'utf8' });
   const lineArr = fileContext.split('\n');
+  // 加一个空格再匹配，避免有相同前缀的类名
+  const matchStr = `${classname} `;
   for (let i = 0; i < lineArr.length; i++) {
-    if (lineArr[i].includes(classname)) {
+    const index = lineArr[i].indexOf(matchStr);
+    if (index > -1) {
       line = i;
+      column = index;
       break;
     }
   }

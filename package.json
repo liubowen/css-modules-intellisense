@@ -33,6 +33,11 @@
           "default": {},
           "description": "路径别名"
         },
+        "css-modules-intellisense.selectedClassname": {
+          "type": "boolean",
+          "default": false,
+          "description": "点击类名跳转到样式文件后是否默认选中类名（含.）"
+        },
         "css-modules-intellisense.configPath": {
           "type": "string",
           "default": "./cmconfig.json",
