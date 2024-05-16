@@ -177,14 +177,14 @@ function getCurrentFolderPath(currentFilePath: string) {
 function getClassNameArr(styleFilePath: string) {
   const data = fs.readFileSync(styleFilePath).toString();
   const reg = /\.\w+([-]*[\w]*)*/g;
-  let classnameArr = data.match(reg);
+  let classnameArr: any = data.match(reg);
   if (!classnameArr) {
     return null;
   }
   // 去重复
   classnameArr = unique(classnameArr);
   // 去除“.”
-  classnameArr = classnameArr.map((classname) => classname.replace('.', ''));
+  classnameArr = classnameArr.map((classname: string) => classname.replace('.', ''));
   return classnameArr;
 }
 

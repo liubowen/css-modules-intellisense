@@ -1,9 +1,12 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
-import { isFileExisted, isJson } from './utils';
+import * as vscode from "vscode";
+import * as path from "path";
+import * as fs from "fs";
+import { isFileExisted, isJson } from "./utils";
 
-const provideDefinition = async (document: vscode.TextDocument, position: vscode.Position) => {
+const provideDefinition = async (
+  document: vscode.TextDocument,
+  position: vscode.Position
+) => {
   try {
     const config = await getConfig();
 
@@ -21,14 +24,15 @@ const provideDefinition = async (document: vscode.TextDocument, position: vscode
 
     const word = document.getText(document.getWordRangeAtPosition(position));
 
-    const classname = '.' + word.replace(/([A-Z])/g, '-$1').toLowerCase();
+    const { line, column, length } = getClassnamePosition(word, styleFilePath);
 
-    const { line, column } = getClassnamePosition(classname, styleFilePath);
-
-    let rangeOrPosition: vscode.Position | vscode.Range = new vscode.Position(line, column);
+    let rangeOrPosition: vscode.Position | vscode.Range = new vscode.Position(
+      line,
+      column
+    );
     if (config.selectedClassname) {
       const start = new vscode.Position(line, column);
-      const end = new vscode.Position(line, column + classname.length);
+      const end = new vscode.Position(line, column + length);
       rangeOrPosition = new vscode.Range(start, end);
     }
 
@@ -40,7 +44,10 @@ const provideDefinition = async (document: vscode.TextDocument, position: vscode
 };
 
 /** 获取点前面的对象/属性名称 */
-export function getObjectName(document: vscode.TextDocument, position: vscode.Position) {
+export function getObjectName(
+  document: vscode.TextDocument,
+  position: vscode.Position
+) {
   const line = document.lineAt(position);
   const lineText = line.text.substring(0, position.character);
 
@@ -50,7 +57,7 @@ export function getObjectName(document: vscode.TextDocument, position: vscode.Po
   function getWordStart(text: string) {
     let start = text.length - 1;
 
-    if (text[start] === '.') {
+    if (text[start] === ".") {
       text = text.substring(0, text.length - 1);
     }
     for (let i = text.length - 1; /^\w+$/.test(text[i]) && i > 0; i--) {
@@ -62,7 +69,7 @@ export function getObjectName(document: vscode.TextDocument, position: vscode.Po
   let start = getWordStart(lineText);
   let end = lineText.length - 1;
 
-  if (lineText.substring(start - 1, start) === '.') {
+  if (lineText.substring(start - 1, start) === ".") {
     const text = lineText.substring(0, start - 1);
     start = getWordStart(text);
     end = text.length;
@@ -78,23 +85,30 @@ interface IAlias {
 async function getConfig() {
   let alias: IAlias = {};
   const conf = vscode.workspace.getConfiguration();
-  const aliasSetting: IAlias | undefined = conf.get('css-modules-intellisense.alias');
-  let selectedClassname: Boolean = conf.get('css-modules-intellisense.selectedClassname') || false;
-  const configPath: string = conf.get('css-modules-intellisense.configPath') || '';
+  const aliasSetting: IAlias | undefined = conf.get(
+    "css-modules-intellisense.alias"
+  );
+  let selectedClassname: Boolean =
+    conf.get("css-modules-intellisense.selectedClassname") || false;
+  const configPath: string =
+    conf.get("css-modules-intellisense.configPath") || "";
   let rootPath = (vscode.workspace.workspaceFolders || [])[0]?.uri?.path;
-  if (rootPath[0] === '/') {
+  if (rootPath[0] === "/") {
     rootPath = rootPath.substring(1);
   }
 
   function aliasSetAbsolutePath(setting: IAlias, configAbsolutePath?: string) {
     const alias: IAlias = {};
     for (const key in setting) {
-      if (setting[key].includes('${workspaceRoot}')) {
-        alias[key] = setting[key].replace('${workspaceRoot}', rootPath);
+      if (setting[key].includes("${workspaceRoot}")) {
+        alias[key] = setting[key].replace("${workspaceRoot}", rootPath);
       } else {
         if (configAbsolutePath) {
-          const pathNodeArr = configAbsolutePath.split('/');
-          const configFolderAbsolutePath = configAbsolutePath.replace(pathNodeArr[pathNodeArr.length - 1], '');
+          const pathNodeArr = configAbsolutePath.split("/");
+          const configFolderAbsolutePath = configAbsolutePath.replace(
+            pathNodeArr[pathNodeArr.length - 1],
+            ""
+          );
           alias[key] = path.resolve(configFolderAbsolutePath, setting[key]);
         } else {
           alias[key] = setting[key];
@@ -124,7 +138,7 @@ async function getConfig() {
           };
         }
 
-        if (config.hasOwnProperty('selectedClassname')) {
+        if (config.hasOwnProperty("selectedClassname")) {
           selectedClassname = config.selectedClassname;
         }
       }
@@ -138,10 +152,14 @@ async function getConfig() {
 }
 
 /** 获取样式文件绝对路径 */
-function getStyleFilePath(name: string, document: vscode.TextDocument, alias: IAlias) {
+function getStyleFilePath(
+  name: string,
+  document: vscode.TextDocument,
+  alias: IAlias
+) {
   const fileContent = document.getText();
-  const impReg = new RegExp('import ' + name + ' from [\'|"]+.*.less');
-  const reqReg = new RegExp('const ' + name + ' = require\\([\'|"]+.*.less');
+  const impReg = new RegExp("import " + name + " from ['|\"]+.*.less");
+  const reqReg = new RegExp("const " + name + " = require\\(['|\"]+.*.less");
   const importStrArr = fileContent.match(impReg) || fileContent.match(reqReg);
   if (!importStrArr) {
     return null;
@@ -149,13 +167,13 @@ function getStyleFilePath(name: string, document: vscode.TextDocument, alias: IA
   const importStr = importStrArr[0].replace(/\"/g, "'");
   let styleFilePath = importStr.split("'")[1];
 
-  if (JSON.stringify(alias) !== '{}') {
-    if (styleFilePath.includes('/')) {
-      const pathNode = styleFilePath.split('/');
+  if (JSON.stringify(alias) !== "{}") {
+    if (styleFilePath.includes("/")) {
+      const pathNode = styleFilePath.split("/");
       const mapPath = alias[pathNode[0]];
       if (mapPath) {
         pathNode[0] = mapPath;
-        styleFilePath = pathNode.join('/');
+        styleFilePath = pathNode.join("/");
         return styleFilePath;
       }
     }
@@ -168,15 +186,28 @@ function getStyleFilePath(name: string, document: vscode.TextDocument, alias: IA
 }
 
 /** 根据类名获取所在less文件的坐标 */
-function getClassnamePosition(classname: string, filePath: string) {
+function getClassnamePosition(word: string, filePath: string) {
+  // 小驼峰类名
+  const lowerCamelCaseClassName = `.${word}`;
+  // 分隔符类名
+  const separatorClassName =
+    "." + word.replace(/([A-Z])/g, "-$1").toLowerCase();
+
   let line = 0;
   let column = 0;
-  const fileContext = fs.readFileSync(filePath, { encoding: 'utf8' });
-  const lineArr = fileContext.split('\n');
+  const fileContext = fs.readFileSync(filePath, { encoding: "utf8" });
+  const lineArr = fileContext.split("\n");
   // 加一个空格再匹配，避免有相同前缀的类名
-  const matchStr = `${classname} `;
+  const lowerCamelCaseMatchStr = `${lowerCamelCaseClassName} `;
+  const separatorMatchStr = `${separatorClassName} `;
+  let length = 0;
   for (let i = 0; i < lineArr.length; i++) {
-    const index = lineArr[i].indexOf(matchStr);
+    let index = lineArr[i].indexOf(separatorMatchStr);
+    length = separatorMatchStr.length;
+    if (index === -1) {
+      index = lineArr[i].indexOf(lowerCamelCaseMatchStr);
+      length = lowerCamelCaseMatchStr.length;
+    }
     if (index > -1) {
       line = i;
       column = index;
@@ -184,7 +215,7 @@ function getClassnamePosition(classname: string, filePath: string) {
     }
   }
 
-  return { line, column };
+  return { line, column, length };
 }
 
 export default provideDefinition;
